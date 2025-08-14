@@ -20,7 +20,7 @@ jobs:
                   node-version: 20
 
             - name: Install Dependencies
-              run: pnpm install
+              run: pnpm install -r
 
             - name: Build Packages
               run: pnpm run build
@@ -28,7 +28,7 @@ jobs:
             - name: Create Release
               uses: changesets/action@v1
               with:
-                  publish: npm run release
+                  publish: pnpm run release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
