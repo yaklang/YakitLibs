@@ -1,6 +1,6 @@
 {
-    "name": "yakit-color",
-    "version": "1.0.1",
+    "name": "@yakit-libs/color",
+    "version": "1.0.0",
     "description": "A set of color designs derived from Yakit",
     "main": "dist/index.css",
     "style": "dist/index.css",
@@ -15,11 +15,11 @@
         "prepublishOnly": "pnpm run build"
     },
     "keywords": [
-        "yakit-color",
-        "yakit"
+        "@yakit-libs/color",
+        "@yakit-libs"
     ],
     "author": "",
-    "license": "ISC",
+    "license": "MIT",
     "packageManager": "pnpm@10.12.4",
     "devDependencies": {
         "cssnano": "^7.1.0",
@@ -29,6 +29,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/yaklang/YakitLibs/tree/main/packages/yakit-color.git"
+        "url": "https://github.com/yaklang/YakitLibs/packages/yakit-color.git"
     }
 }

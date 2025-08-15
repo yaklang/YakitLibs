@@ -2,7 +2,7 @@
 @use "./function.scss" as components;
 
 $color-names: Main, Error, Warning, Success, "Blue";
-$color-tag-names: "Purple", "Magenta", "Lake-blue", "Cyan", "Green", "Red", "Orange", "Yellow";
+$color-tag-names: "Purple", "Magenta", "Lake-blue", "Cyan", "Green", "Red", "Orange", "Yellow", "Grey";
 
 html[data-theme="light"] {
     @include generator.generate-all-theme-colors(light);
@@ -16,7 +16,6 @@ html[data-theme="light"] {
     @each $color in $color-tag-names {
         @include components.generate-tag-semantic-colors($color, light);
     }
-
     h1,
     h2,
     h3,
@@ -38,7 +37,6 @@ html[data-theme="dark"] {
     @each $color in $color-tag-names {
         @include components.generate-tag-semantic-colors($color, dark);
     }
-
     h1,
     h2,
     h3,

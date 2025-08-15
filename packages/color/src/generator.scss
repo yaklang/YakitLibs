@@ -3,7 +3,6 @@
 @use "sass:color";
 @use "sass:string";
 
-// 底色
 $white-background-color: #ffffff;
 $black-background-color: #171717;
 
@@ -14,11 +13,11 @@ $yakit-light-mix-steps: (
         light,
     ),
     20: (
-        80%,
+        88%,
         light,
     ),
     30: (
-        70%,
+        80%,
         light,
     ),
     40: (
@@ -113,7 +112,7 @@ $yakit-theme-colors: (
 
 /// 混合主色和背景色的函数
 @function mix-color($main, $bg, $percentage) {
-    @return color.mix($bg, $main, $percentage);
+    @return mix($bg, $main, $percentage);
 }
 
 /// 获取混合百分比（支持覆盖）
@@ -121,13 +120,19 @@ $yakit-theme-colors: (
     @if $name == Neutral and $mode == dark and $level == 10 {
         @return 88%;
     }
+    @if $name == Neutral and $mode == light and $level == 20 {
+        @return 80%;
+    }
+    @if $name == Neutral and $mode == light and $level == 30 {
+        @return 70%;
+    }
     @return $default-percent;
 }
 
 /// 生成单个基础色变量
 @mixin generate-single-theme-color($name, $mode: light) {
     // 默认从映射中取基础色
-    $color: map.get($yakit-theme-colors, $name);
+    $color: map-get($yakit-theme-colors, $name);
 
     // 对特定 name + mode 进行基色覆盖
     @if $name == Neutral and $mode == dark {
@@ -150,8 +155,8 @@ $yakit-theme-colors: (
 
     // 遍历每个混合步骤
     @each $level, $info in $steps {
-        $default-percent: list.nth($info, 1);
-        $direction: list.nth($info, 2);
+        $default-percent: nth($info, 1);
+        $direction: nth($info, 2);
         $percent: get-mix-percent($name, $mode, $level, $default-percent);
         $target-bg: if($direction == light, $white-background-color, $black-background-color);
 
@@ -171,9 +176,9 @@ $yakit-theme-colors: (
     }
     @if $name == Main {
         @if $mode == light {
-            #{$prefix}0: #{string.unquote("#F28C4514")};
+            #{$prefix}0: #{unquote("#F28C4514")};
         } @else if $mode == dark {
-            #{$prefix}0: #{string.unquote("#F2853A14")};
+            #{$prefix}0: #{unquote("#F2853A14")};
         }
     }
 }

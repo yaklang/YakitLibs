@@ -4,7 +4,7 @@
     "commit": false,
     "access": "public",
     "baseBranch": "main",
-    "ignore": ["yakit-ui"],
+    "ignore": ["@yakit-libs/uis"],
     "linked": [],
     "updateInternalDependencies": "minor"
 }

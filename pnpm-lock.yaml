@@ -15,7 +15,7 @@ importers:
         specifier: ^2.5.5
         version: 2.5.5
 
-  packages/yakit-color:
+  packages/color:
     devDependencies:
       cssnano:
         specifier: ^7.1.0
@@ -30,11 +30,11 @@ importers:
         specifier: ^1.90.0
         version: 1.90.0
 
-  packages/yakit-ui:
+  packages/uis:
     devDependencies:
-      yakit-color:
+      '@yakit-libs/color':
         specifier: workspace:*
-        version: link:../yakit-color
+        version: link:../color
 
 packages:
 
