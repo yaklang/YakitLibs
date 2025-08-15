@@ -29,6 +29,6 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/yaklang/YakitLibs/packages/yakit-color.git"
+        "url": "https://github.com/yaklang/YakitLibs/packages/color.git"
     }
 }
