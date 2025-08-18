@@ -29,6 +29,11 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/yaklang/YakitLibs/packages/color.git"
-    }
+        "url": "https://github.com/yaklang/YakitLibs",
+        "directory": "packages/color"
+    },
+    "bugs": {
+        "url": "https://github.com/yaklang/YakitLibs/issues"
+    },
+    "homepage": "https://github.com/yaklang/YakitLibs/packages/color/README.md"
 }
