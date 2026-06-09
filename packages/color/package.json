@@ -1,17 +1,32 @@
 {
     "name": "@yakit-libs/color",
-    "version": "1.0.2",
+    "version": "1.2.0",
     "description": "A set of color designs derived from Yakit",
-    "main": "dist/index.css",
-    "style": "dist/index.css",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "files": [
-        "dist",
-        "src",
-        "postcss.config.js"
+        "dist"
     ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "require": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./generator": {
+            "types": "./dist/generator.d.ts",
+            "require": "./dist/generator.js",
+            "default": "./dist/generator.js"
+        },
+        "./component": {
+            "types": "./dist/component.d.ts",
+            "require": "./dist/component.js",
+            "default": "./dist/component.js"
+        }
+    },
     "scripts": {
-        "build": "sass src/index.scss | postcss -o  dist/index.css",
-        "watch-build": "sass --watch src/index.scss | postcss -o  dist/index.css",
+        "build": "tsc",
+        "watch-build": "tsc --watch",
         "prepublishOnly": "pnpm run build"
     },
     "keywords": [
@@ -22,10 +37,7 @@
     "license": "MIT",
     "packageManager": "pnpm@10.12.4",
     "devDependencies": {
-        "cssnano": "^7.1.0",
-        "postcss": "^8.5.6",
-        "postcss-cli": "^11.0.1",
-        "sass": "^1.90.0"
+        "typescript": "^5.9.2"
     },
     "repository": {
         "type": "git",
