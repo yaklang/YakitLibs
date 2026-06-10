@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- 重构为 JS/TypeScript API，移除 SCSS 静态 CSS 构建
+- 重构为 JS/TypeScript API，移除 SCSS 静态 CSS 构建;
 - 新增 `generateColors`、`applyThemeColors`、`generateAllSemanticColors` 等运行时方法
 - 支持按需从 `@yakit-libs/color/generator` 与 `@yakit-libs/color/component` 子路径导入
 
