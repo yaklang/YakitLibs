@@ -13,6 +13,7 @@ import {
   generateTagSemanticColors,
   generateStatusSemanticColors,
 } from './component'
+import { applyThemeColors as applyThemeColorsBase } from './apply-theme'
 import type { ColorHex, ThemeColorName, ThemeColorResult, ThemeMode } from './generator'
 import type { SemanticColorName, TagColorName, SemanticColorResult } from './component'
 
@@ -62,12 +63,9 @@ export function generateColors(mode: ThemeMode = 'light', mainColorOverride?: Co
 export function applyThemeColors(
   mode: ThemeMode,
   colors: ColorVariables,
-  target: HTMLElement = document.documentElement,
+  target?: HTMLElement,
 ): void {
-  target.setAttribute('data-theme', mode)
-  Object.entries(colors).forEach(([key, value]) => {
-    target.style.setProperty(key, value)
-  })
+  applyThemeColorsBase(mode, colors, target)
 }
 
 export {
