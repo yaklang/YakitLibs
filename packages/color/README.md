@@ -67,9 +67,34 @@ const mainColors = generateSemanticColors('Main', 'light')
 
 | 路径 | 说明 |
 | --- | --- |
-| `@yakit-libs/color` | 主入口，含 `generateColors`、`applyThemeColors` 等 |
+| `@yakit-libs/color` | 主入口，含 `generateColors`、`applyThemeColors` 等（运行时计算） |
+| `@yakit-libs/color/preview` | **Preview 入口**，使用构建期预计算的亮/暗色变量，零运行时计算，性能更优 |
 | `@yakit-libs/color/generator` | 基础色阶生成（`generateAllThemeColors` 等） |
 | `@yakit-libs/color/component` | 语义色生成（`generateSemanticColors` 等） |
+
+### Preview 模式（推荐用于生产环境）
+
+默认入口会在运行时通过 JS 混合计算全部色阶，在大型项目中可能导致 3–4s 的初始化开销。Preview 入口在**库构建时**预计算好 light/dark 两套颜色，消费方直接读取静态对象，无运行时计算。
+
+**用法（与主入口 API 兼容）：**
+
+```typescript
+import { getColors, generateColors, applyThemeColors, lightColors, darkColors } from '@yakit-libs/color/preview'
+
+// 直接获取预计算结果（同一 mode 始终返回同一对象引用）
+const colors = getColors('light')
+// 或
+const colors = generateColors('dark')
+
+applyThemeColors('light', colors)
+
+// 也可直接使用常量
+console.log(lightColors['--yakit-colors-Main-60'])
+```
+
+> Preview 模式不支持 `mainColorOverride` 主色覆盖。如需动态覆盖 Main 主色，请继续使用 `@yakit-libs/color` 主入口。
+
+**维护者：** 修改 `generator.ts` 或 `component.ts` 后，运行 `pnpm run generate`（或 `npm run build`）重新生成 `src/precomputed/colors.ts`。
 
 ### 贡献
 
