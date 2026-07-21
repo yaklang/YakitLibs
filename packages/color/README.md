@@ -63,6 +63,75 @@ const mainColors = generateSemanticColors('Main', 'light')
 }
 ```
 
+### 使用外部主题色生成静态 CSS（推荐用于生产环境）
+
+消费项目可以在构建时传入 Main 主题色，生成同时包含 light/dark 变量的静态 CSS。颜色计算只在 Node.js 构建阶段执行，浏览器不需要加载颜色生成逻辑。
+
+**1. 在消费项目中配置生成命令**
+
+```json
+{
+  "scripts": {
+    "generate:theme": "yakit-color-css --main '#1677ff' --out public/theme.css --hashed",
+    "build": "npm run generate:theme && vite build"
+  }
+}
+```
+
+该命令会生成类似 `public/theme.a1b2c3d4e5f6.css` 的内容哈希文件，以及 `public/theme-manifest.json`：
+
+```json
+{
+  "file": "theme.a1b2c3d4e5f6.css",
+  "integrity": "sha256-..."
+}
+```
+
+也可以通过 Node API 集成到自定义构建脚本：
+
+```typescript
+import { writeHashedThemeCss } from '@yakit-libs/color/node'
+
+const result = writeHashedThemeCss({
+  mainColor: process.env.MAIN_COLOR ?? '#1677ff',
+  output: 'public/theme.css',
+})
+
+console.log(result.output, result.manifest)
+```
+
+如只需要 CSS 字符串，可使用不依赖 Node 文件系统的 API：
+
+```typescript
+import { generateThemeCss } from '@yakit-libs/color/css'
+
+const css = generateThemeCss('#1677ff')
+```
+
+**2. 通过静态资源加载 CSS**
+
+在服务端模板或消费项目的 HTML 构建步骤中读取 manifest，将 `file` 和 `integrity` 写入标签：
+
+```html
+<link rel="stylesheet" href="/theme.a1b2c3d4e5f6.css" integrity="sha256-..." />
+```
+
+生成结果默认使用 `:root` 作为亮色主题，给根元素设置 `data-theme="dark"` 即可切换暗色主题：
+
+```typescript
+document.documentElement.dataset.theme = 'dark'
+```
+
+**3. 配置 HTTP 缓存**
+
+从 npm 包 `import` 模块不会发起独立 CSS 请求。内容哈希保证文件名只在 CSS 内容改变时变化，因此可对哈希 CSS 设置长期强缓存：
+
+```http
+Cache-Control: public, max-age=31536000, immutable
+```
+
+缓存命中时浏览器不会发起条件请求，比 304 少一次网络往返。`theme-manifest.json` 或引用它的 HTML 不应使用 `immutable`，以便主题更新后及时指向新的哈希文件。如果仍需固定的 `theme.css` 文件名，可继续使用不带 `--hashed` 的 CLI，并由静态服务器通过 `ETag` 或 `Last-Modified` 返回 304。
+
 ### 导出模块
 
 | 路径 | 说明 |
@@ -71,8 +140,10 @@ const mainColors = generateSemanticColors('Main', 'light')
 | `@yakit-libs/color/preview` | **Preview 入口**，使用构建期预计算的亮/暗色变量，零运行时计算，性能更优 |
 | `@yakit-libs/color/generator` | 基础色阶生成（`generateAllThemeColors` 等） |
 | `@yakit-libs/color/component` | 语义色生成（`generateSemanticColors` 等） |
+| `@yakit-libs/color/css` | 根据外部 Main 色生成 light/dark 静态 CSS 字符串 |
+| `@yakit-libs/color/node` | 将动态主题 CSS 写入文件的 Node.js API |
 
-### Preview 模式（推荐用于生产环境）
+### Preview 模式（默认固定主题）
 
 默认入口会在运行时通过 JS 混合计算全部色阶，在大型项目中可能导致 3–4s 的初始化开销。Preview 入口在**库构建时**预计算好 light/dark 两套颜色，消费方直接读取静态对象，无运行时计算。
 

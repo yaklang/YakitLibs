@@ -27,11 +27,25 @@
             "types": "./dist/component.d.ts",
             "require": "./dist/component.js",
             "default": "./dist/component.js"
+        },
+        "./css": {
+            "types": "./dist/css-generator.d.ts",
+            "require": "./dist/css-generator.js",
+            "default": "./dist/css-generator.js"
+        },
+        "./node": {
+            "types": "./dist/node.d.ts",
+            "require": "./dist/node.js",
+            "default": "./dist/node.js"
         }
+    },
+    "bin": {
+        "yakit-color-css": "./dist/cli.js"
     },
     "scripts": {
         "generate": "tsx scripts/generate-precomputed.ts",
         "build": "npm run generate && tsc",
+        "test": "tsc -p test/tsconfig.json && tsx --test test/*.test.ts",
         "watch-build": "tsc --watch",
         "prepublishOnly": "npm run build"
     },
