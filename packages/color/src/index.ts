@@ -19,6 +19,14 @@ import type { SemanticColorName, TagColorName, SemanticColorResult } from './com
 
 export * from './generator'
 export * from './component'
+export {
+  brandThemeColors,
+  isBrandThemeName,
+  parseMainColor,
+  resolveBrandThemeColor,
+  resolveMainColor,
+} from './themes'
+export type { BrandThemeName, BrandThemeConfig } from './themes'
 
 const SEMANTIC_COLOR_NAMES: SemanticColorName[] = ['Main', 'Error', 'Warning', 'Success', 'Blue']
 const TAG_COLOR_NAMES: TagColorName[] = [

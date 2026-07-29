@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { generateThemeCss, parseMainColor } from '../src/css-generator'
+import { generateThemeCss, parseMainColor, resolveMainColor } from '../src/css-generator'
+import { brandThemeColors } from '../src/themes'
 import { writeHashedThemeCss, writeThemeCss } from '../src/node'
 
 test('generateThemeCss creates light and dark variables from a custom Main color', () => {
@@ -20,6 +21,43 @@ test('parseMainColor trims valid colors and rejects unsafe values', () => {
   assert.equal(parseMainColor('  #abc  '), '#abc')
   assert.throws(() => parseMainColor('red'), /Invalid main color/)
   assert.throws(() => parseMainColor('#123456; color: red'), /Invalid main color/)
+})
+
+test('resolveMainColor accepts preset brand themes', () => {
+  assert.equal(resolveMainColor('Main'), brandThemeColors.Main)
+  assert.equal(resolveMainColor('Web'), brandThemeColors.Web)
+  assert.equal(resolveMainColor('Gold'), brandThemeColors.Gold)
+  assert.equal(resolveMainColor('Memfit', 'light'), '#2E63B3')
+  assert.equal(resolveMainColor('Memfit', 'dark'), '#5E9DEA')
+  assert.equal(resolveMainColor('Irify', 'dark'), '#B081FF')
+  assert.equal(resolveMainColor('  #E76800  '), '#E76800')
+})
+
+test('generateThemeCss supports preset Web and Gold themes', () => {
+  const webCss = generateThemeCss('Web')
+  const goldCss = generateThemeCss('Gold')
+
+  assert.equal(webCss, generateThemeCss('#E76800'))
+  assert.equal(goldCss, generateThemeCss('#B49434'))
+  assert.notEqual(webCss, goldCss)
+})
+
+test('dark mode Main Primary uses level 60 for brand themes', () => {
+  for (const themeName of ['Main', 'Web', 'Gold', 'Memfit', 'Irify'] as const) {
+    const css = generateThemeCss(themeName)
+    const darkSection = css.split('[data-theme="dark"]')[1]
+
+    assert.match(darkSection, /--Colors-Use-Main-Primary: var\(--yakit-colors-Main-60\);/)
+    assert.doesNotMatch(darkSection, /--Colors-Use-Main-Primary: var\(--yakit-colors-Main-70\);/)
+  }
+})
+
+test('Memfit and Irify use different base colors in light and dark CSS', () => {
+  const memfitCss = generateThemeCss('Memfit')
+  const irifyCss = generateThemeCss('Irify')
+
+  assert.notEqual(memfitCss.match(/:root \{[\s\S]*?--yakit-colors-Main-60: ([^;]+);/)?.[1], memfitCss.match(/\[data-theme="dark"\] \{[\s\S]*?--yakit-colors-Main-60: ([^;]+);/)?.[1])
+  assert.notEqual(irifyCss.match(/:root \{[\s\S]*?--yakit-colors-Main-60: ([^;]+);/)?.[1], irifyCss.match(/\[data-theme="dark"\] \{[\s\S]*?--yakit-colors-Main-60: ([^;]+);/)?.[1])
 })
 
 test('writeThemeCss does not rewrite unchanged output', () => {

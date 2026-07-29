@@ -182,7 +182,7 @@ export function generateSingleThemeColor(
   }
 
   if (name === 'Main') {
-    const baseLevel = mode === 'light' ? 60 : 70
+    const baseLevel = 60
     const baseColor = result[`${prefix}${baseLevel}`]
     if (baseColor) {
       const alphaHex = Math.round(0.08 * 255)
