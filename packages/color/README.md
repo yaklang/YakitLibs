@@ -21,13 +21,17 @@ npm install @yakit-libs/color
 **2. 生成并应用颜色变量**
 
 ```typescript
-import { generateColors, applyThemeColors } from '@yakit-libs/color'
+import { brandThemeColors, generateColors, applyThemeColors } from '@yakit-libs/color'
 
 const theme = 'light'
 const colors = generateColors(theme)
 
 // 可选：覆盖 Main 主色
 // const colors = generateColors(theme, '#F17F30')
+
+// 或使用预设品牌主题
+const webColors = generateColors(theme, brandThemeColors.Web)
+const goldColors = generateColors(theme, brandThemeColors.Gold)
 
 applyThemeColors(theme, colors)
 ```
@@ -72,11 +76,26 @@ const mainColors = generateSemanticColors('Main', 'light')
 ```json
 {
   "scripts": {
-    "generate:theme": "yakit-color-css --main '#1677ff' --out public/theme.css --hashed",
-    "build": "npm run generate:theme && vite build"
+    "generate:theme:web": "yakit-color-css --theme Web --out public/theme-web.css --hashed",
+    "generate:theme:gold": "yakit-color-css --theme Gold --out public/theme-gold.css --hashed",
+    "build": "npm run generate:theme:web && vite build"
   }
 }
 ```
+
+内置品牌主题：
+
+| 名称 | Main 基础色 |
+| --- | --- |
+| `Main` | `#F17F30`（亮/暗一致） |
+| `Web` | `#E76800`（亮/暗一致） |
+| `Gold` | `#B49434`（亮/暗一致） |
+| `Memfit` | 亮色 `#2E63B3` / 暗色 `#5E9DEA` |
+| `Irify` | 亮色 `#6A44A9` / 暗色 `#B081FF` |
+
+暗色模式下，以上主题的 `--Colors-Use-Main-Primary` 均映射到 `--yakit-colors-Main-60`。
+
+仍可通过 `--main '#1677ff'` 传入自定义十六进制主色。
 
 该命令会生成类似 `public/theme.a1b2c3d4e5f6.css` 的内容哈希文件，以及 `public/theme-manifest.json`：
 
@@ -105,7 +124,8 @@ console.log(result.output, result.manifest)
 ```typescript
 import { generateThemeCss } from '@yakit-libs/color/css'
 
-const css = generateThemeCss('#1677ff')
+const css = generateThemeCss('Web')
+// 或 generateThemeCss('#E76800')
 ```
 
 **2. 通过静态资源加载 CSS**

@@ -2,10 +2,11 @@
 
 import { writeHashedThemeCss, writeThemeCss } from './node'
 
-const USAGE = `Usage: yakit-color-css --main <hex-color> --out <file> [--hashed]
+const USAGE = `Usage: yakit-color-css (--main <hex-color> | --theme <name>) --out <file> [--hashed]
 
 Options:
   --main      Main theme color, for example "#1677ff"
+  --theme     Preset brand theme: Main, Web, Gold, Memfit, or Irify
   --out       Output CSS file, for example "public/theme.css"
   --hashed    Add a content hash to the CSS filename and write a manifest
   --manifest  Custom manifest path (only with --hashed)
@@ -13,6 +14,7 @@ Options:
 
 interface CliOptions {
   mainColor?: string
+  theme?: string
   output?: string
   hashed: boolean
   manifest?: string
@@ -47,6 +49,8 @@ export function parseCliOptions(args: string[]): CliOptions {
       options.hashed = true
     } else if (argument === '--main' || argument.startsWith('--main=')) {
       ;[options.mainColor, index] = readOptionValue(args, index, '--main')
+    } else if (argument === '--theme' || argument.startsWith('--theme=')) {
+      ;[options.theme, index] = readOptionValue(args, index, '--theme')
     } else if (argument === '--out' || argument.startsWith('--out=')) {
       ;[options.output, index] = readOptionValue(args, index, '--out')
     } else if (argument === '--manifest' || argument.startsWith('--manifest=')) {
@@ -71,16 +75,21 @@ export function runCli(
       stdout.write(`${USAGE}\n`)
       return 0
     }
-    if (!options.mainColor || !options.output) {
-      throw new Error('Both --main and --out are required.')
+    if ((!options.mainColor && !options.theme) || (options.mainColor && options.theme)) {
+      throw new Error('Provide exactly one of --main or --theme, and --out is required.')
+    }
+    if (!options.output) {
+      throw new Error('--out is required.')
     }
     if (options.manifest && !options.hashed) {
       throw new Error('--manifest can only be used with --hashed.')
     }
 
+    const mainColorOrTheme = options.theme ?? options.mainColor!
+
     if (options.hashed) {
       const result = writeHashedThemeCss({
-        mainColor: options.mainColor,
+        mainColor: mainColorOrTheme,
         output: options.output,
         manifest: options.manifest,
       })
@@ -88,7 +97,7 @@ export function runCli(
       stdout.write(`${result.manifestWritten ? 'Generated' : 'Unchanged'} ${result.manifest}\n`)
     } else {
       const result = writeThemeCss({
-        mainColor: options.mainColor,
+        mainColor: mainColorOrTheme,
         output: options.output,
       })
       stdout.write(`${result.written ? 'Generated' : 'Unchanged'} ${result.output}\n`)

@@ -264,7 +264,7 @@ export const darkColors: ColorVariables = {
   '--yakit-colors-Main-80': '#f59f64',
   '--yakit-colors-Main-90': '#f9c5a2',
   '--yakit-colors-Main-100': '#fce5d6',
-  '--yakit-colors-Main-0': '#f2853a14',
+  '--yakit-colors-Main-0': '#db752e14',
   '--yakit-colors-Success-10': '#16241f',
   '--yakit-colors-Success-20': '#16372c',
   '--yakit-colors-Success-30': '#154837',
