@@ -24,6 +24,17 @@ export type ColorHex = `#${string}`
 
 export type ThemeColorResult = Record<string, ColorHex>
 
+export type ColorVariableSource =
+  | Readonly<Record<string, string>>
+  | {
+      getPropertyValue(property: string): string
+    }
+
+export interface ColorScaleInput {
+  readonly name: string
+  readonly hex: string
+}
+
 export const whiteBackgroundColor: ColorHex = '#ffffff'
 export const blackBackgroundColor: ColorHex = '#171717'
 
@@ -112,6 +123,158 @@ function mixColors(color1: ColorHex, color2: ColorHex, weight: string | number):
     Math.round(c1[2] * w + c2[2] * (1 - w)),
   ]
   return rgbToHex(mixed)
+}
+
+const hexColorPattern = /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i
+const colorNamePattern = /^[A-Za-z][A-Za-z0-9-]*$/
+const colorVariablePattern = /^--(?:Colors-Use-|yakit-colors-)[A-Za-z0-9_-]+$/
+const varFunctionPattern = /^var\(\s*(--[A-Za-z0-9_-]+)\s*\)$/
+const hexColorSpaceSize = 0x1000000
+
+function parseHexColor(value: string, label: string): ColorHex {
+  const hex = value.trim()
+  if (!hexColorPattern.test(hex)) {
+    throw new TypeError(`${label} must be a 3- or 6-digit hexadecimal color.`)
+  }
+  return hex as ColorHex
+}
+
+function normalizeHexColor(value: string, label: string): string {
+  const hex = parseHexColor(value, label).slice(1).toLowerCase()
+  return hex.length === 3
+    ? hex
+        .split('')
+        .map((character) => character + character)
+        .join('')
+    : hex
+}
+
+function formatHexColorNumber(value: number): string {
+  return value.toString(16).padStart(6, '0')
+}
+
+function readColorVariable(source: ColorVariableSource, variableName: string): string {
+  if ('getPropertyValue' in source && typeof source.getPropertyValue === 'function') {
+    return source.getPropertyValue(variableName)
+  }
+  return (source as Readonly<Record<string, string>>)[variableName] ?? ''
+}
+
+function parseColorVariable(value: string): string {
+  const trimmed = value.trim()
+  const variableName = trimmed.startsWith('var(') ? varFunctionPattern.exec(trimmed)?.[1] : trimmed
+
+  if (!variableName || !colorVariablePattern.test(variableName)) {
+    throw new TypeError(`Invalid color variable: "${value}".`)
+  }
+  return variableName
+}
+
+/** Resolves a Yakit CSS custom property to its final hexadecimal value. */
+export function resolveColorVariable(variableNameOrVar: string, source: ColorVariableSource): ColorHex {
+  let variableName = parseColorVariable(variableNameOrVar)
+  const visited = new Set<string>()
+
+  while (!visited.has(variableName)) {
+    visited.add(variableName)
+    const value = readColorVariable(source, variableName).trim()
+
+    if (!value) {
+      throw new TypeError(`Unknown color variable: "${variableName}".`)
+    }
+    if (hexColorPattern.test(value)) {
+      return value as ColorHex
+    }
+
+    const referencedVariable = varFunctionPattern.exec(value)?.[1]
+    if (!referencedVariable || !colorVariablePattern.test(referencedVariable)) {
+      throw new TypeError(`Color variable "${variableName}" does not resolve to a hexadecimal color.`)
+    }
+    variableName = referencedVariable
+  }
+
+  throw new TypeError(`Circular color variable reference detected at "${variableName}".`)
+}
+
+function generateColorScale(name: string, color: ColorHex, mode: ThemeMode): ThemeColorResult {
+  const steps = mode === 'light' ? yakitLightMixSteps : yakitDarkMixSteps
+  const result: ThemeColorResult = {}
+
+  for (const [level, [percent, direction]] of steps) {
+    const targetBg = direction === 'light' ? whiteBackgroundColor : blackBackgroundColor
+    result[`--yakit-colors-${name}-${level}`] = mixColors(targetBg, color, percent)
+  }
+
+  return result
+}
+
+/** Generates ten Yakit color levels for each consumer-provided base color. */
+export function generateColorScales(colors: readonly ColorScaleInput[], mode: ThemeMode = 'light'): ThemeColorResult {
+  const result: ThemeColorResult = {}
+  const names = new Set<string>()
+
+  for (const entry of colors) {
+    const name = entry.name.trim()
+    if (!colorNamePattern.test(name)) {
+      throw new TypeError(`Invalid color name: "${entry.name}".`)
+    }
+    if (names.has(name)) {
+      throw new TypeError(`Duplicate color name: "${name}".`)
+    }
+    names.add(name)
+
+    Object.assign(result, generateColorScale(name, parseHexColor(entry.hex, `Color "${name}"`), mode))
+  }
+
+  return result
+}
+
+/** Generates random color scales from unique base colors while honoring exact exclusions. */
+export function generateRandomColorScales(
+  excludedHexColors: readonly string[] = [],
+  generateColorsNum = 5,
+  mode: ThemeMode = 'light',
+): ThemeColorResult {
+  if (!Number.isSafeInteger(generateColorsNum) || generateColorsNum < 0) {
+    throw new RangeError('generateColorsNum must be a non-negative safe integer.')
+  }
+
+  const unavailable = new Set(
+    excludedHexColors.map((hex, index) => normalizeHexColor(hex, `Excluded color at index ${index}`)),
+  )
+  if (generateColorsNum > hexColorSpaceSize - unavailable.size) {
+    throw new RangeError('Not enough unique hexadecimal colors are available.')
+  }
+  const colors: ColorScaleInput[] = []
+  let nextSequentialColor = 0
+
+  for (let index = 0; index < generateColorsNum; index += 1) {
+    let normalizedHex = ''
+
+    for (let attempt = 0; attempt < 100 && !normalizedHex; attempt += 1) {
+      const candidate = formatHexColorNumber(Math.floor(Math.random() * hexColorSpaceSize))
+      if (!unavailable.has(candidate)) {
+        normalizedHex = candidate
+      }
+    }
+
+    while (!normalizedHex && nextSequentialColor < hexColorSpaceSize) {
+      const candidate = formatHexColorNumber(nextSequentialColor)
+      nextSequentialColor += 1
+      if (!unavailable.has(candidate)) {
+        normalizedHex = candidate
+      }
+    }
+
+    if (!normalizedHex) {
+      throw new RangeError('Not enough unique hexadecimal colors are available.')
+    }
+
+    unavailable.add(normalizedHex)
+    colors.push({ name: `Random-${index + 1}`, hex: `#${normalizedHex}` })
+  }
+
+  return generateColorScales(colors, mode)
 }
 
 export function getMixPercent(name: ThemeColorName, mode: ThemeMode, level: number, defaultPercent: string): string {
