@@ -24,6 +24,11 @@ export type ColorHex = `#${string}`
 
 export type ThemeColorResult = Record<string, ColorHex>
 
+export interface ThemeColorModesResult {
+  light: ThemeColorResult
+  dark: ThemeColorResult
+}
+
 export type ColorVariableSource =
   | Readonly<Record<string, string>>
   | {
@@ -33,6 +38,11 @@ export type ColorVariableSource =
 export interface ColorScaleInput {
   readonly name: string
   readonly hex: string
+}
+
+interface NormalizedColorScaleInput {
+  readonly name: string
+  readonly hex: ColorHex
 }
 
 export const whiteBackgroundColor: ColorHex = '#ffffff'
@@ -208,10 +218,20 @@ function generateColorScale(name: string, color: ColorHex, mode: ThemeMode): The
   return result
 }
 
-/** Generates ten Yakit color levels for each consumer-provided base color. */
-export function generateColorScales(colors: readonly ColorScaleInput[], mode: ThemeMode = 'light'): ThemeColorResult {
+function generateColorScalesForMode(colors: readonly NormalizedColorScaleInput[], mode: ThemeMode): ThemeColorResult {
   const result: ThemeColorResult = {}
+
+  for (const entry of colors) {
+    Object.assign(result, generateColorScale(entry.name, entry.hex, mode))
+  }
+
+  return result
+}
+
+/** Generates light and dark Yakit color levels for each consumer-provided base color. */
+export function generateColorScales(colors: readonly ColorScaleInput[]): ThemeColorModesResult {
   const names = new Set<string>()
+  const normalizedColors: NormalizedColorScaleInput[] = []
 
   for (const entry of colors) {
     const name = entry.name.trim()
@@ -222,19 +242,20 @@ export function generateColorScales(colors: readonly ColorScaleInput[], mode: Th
       throw new TypeError(`Duplicate color name: "${name}".`)
     }
     names.add(name)
-
-    Object.assign(result, generateColorScale(name, parseHexColor(entry.hex, `Color "${name}"`), mode))
+    normalizedColors.push({ name, hex: parseHexColor(entry.hex, `Color "${name}"`) })
   }
 
-  return result
+  return {
+    light: generateColorScalesForMode(normalizedColors, 'light'),
+    dark: generateColorScalesForMode(normalizedColors, 'dark'),
+  }
 }
 
 /** Generates random color scales from unique base colors while honoring exact exclusions. */
 export function generateRandomColorScales(
   excludedHexColors: readonly string[] = [],
   generateColorsNum = 5,
-  mode: ThemeMode = 'light',
-): ThemeColorResult {
+): ThemeColorModesResult {
   if (!Number.isSafeInteger(generateColorsNum) || generateColorsNum < 0) {
     throw new RangeError('generateColorsNum must be a non-negative safe integer.')
   }
@@ -274,7 +295,7 @@ export function generateRandomColorScales(
     colors.push({ name: `Random-${index + 1}`, hex: `#${normalizedHex}` })
   }
 
-  return generateColorScales(colors, mode)
+  return generateColorScales(colors)
 }
 
 export function getMixPercent(name: ThemeColorName, mode: ThemeMode, level: number, defaultPercent: string): string {

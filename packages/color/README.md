@@ -91,39 +91,56 @@ const hex = resolveColorVariable('--Colors-Use-Blue-Primary', colors)
 
 **2. 根据指定基色生成色阶**
 
-`generateColorScales(items, mode)` 接收名称与基色数组，返回一个扁平的 CSS 变量对象。`mode` 默认为 `light`，也可以传入 `dark`。
+`generateColorScales(items)` 接收名称与基色数组，一次返回亮色和暗色两个 CSS 变量对象。返回值结构为 `{ light, dark }`，每个模式都是一个扁平的变量对象，并且使用同一组指定基色生成。
 
 ```typescript
 import { generateColorScales } from '@yakit-libs/color'
 
-const colors = generateColorScales(
-  [
-    { name: 'blue', hex: '#0000FF' },
-    { name: 'green', hex: '#00FF00' },
-  ],
-  'light',
-)
+const colors = generateColorScales([
+  { name: 'blue', hex: '#0000FF' },
+  { name: 'green', hex: '#00FF00' },
+])
 
-colors['--yakit-colors-blue-10']
-colors['--yakit-colors-blue-100']
-colors['--yakit-colors-green-60']
+colors.light['--yakit-colors-blue-10']
+colors.light['--yakit-colors-green-60']
+colors.dark['--yakit-colors-blue-100']
 ```
 
 名称或十六进制颜色无效、名称重复时会抛出 `TypeError`。
 
+这是一次破坏性 API 调整：方法不再接收 `mode`，原先直接读取扁平返回值的调用需要改为读取对应的模式对象。
+
+```typescript
+import { generateColorScales } from '@yakit-libs/color'
+
+const items = [{ name: 'blue', hex: '#0000FF' }]
+const theme = 'dark'
+
+// 调整前
+// const lightColors = generateColorScales(items, 'light')
+
+// 调整后：只生成一次，切换主题时选择对应对象
+const colors = generateColorScales(items)
+const currentColors = theme === 'dark' ? colors.dark : colors.light
+```
+
 **3. 随机生成色阶**
 
-`generateRandomColorScales(exclusions?, generateColorsNum?, mode?)` 默认生成 5 组色阶，名称依次为 `Random-1` 到 `Random-5`。传入 `generateColorsNum` 可以控制组数；该值必须是非负安全整数，并且不能超过排除指定颜色后剩余的 24-bit 可用颜色数量。
+`generateRandomColorScales(exclusions?, generateColorsNum?)` 默认生成 5 组色阶，名称依次为 `Random-1` 到 `Random-5`。方法一次返回 `{ light, dark }`；传入 `generateColorsNum` 可以控制组数，该值必须是非负安全整数，并且不能超过排除指定颜色后剩余的 24-bit 可用颜色数量。
 
 ```typescript
 import { generateRandomColorScales } from '@yakit-libs/color'
 
-const colors = generateRandomColorScales(['#0000FF', '#0F0'], 3, 'dark')
+const colors = generateRandomColorScales(['#0000FF', '#0F0'], 3)
 
-colors['--yakit-colors-Random-1-10']
-colors['--yakit-colors-Random-2-60']
-colors['--yakit-colors-Random-3-100']
+colors.light['--yakit-colors-Random-1-10']
+colors.light['--yakit-colors-Random-2-60']
+colors.dark['--yakit-colors-Random-3-100']
 ```
+
+原先的第三个 `mode` 参数不再有效；调用方应保留整个返回对象，并在切换主题时选择 `colors.light` 或 `colors.dark`。
+
+每组随机基色只选择一次，`light` 和 `dark` 使用同一组基色，再分别应用各自的混色规则；两个模式不会独立随机，因此切换主题不会改变随机色板的身份。
 
 随机生成仅保证本次调用中的基色唯一，并按规范化后的十六进制值进行精确排除，例如 `#0F0` 与 `#00FF00` 视为同一颜色。它不保证颜色之间具有足够的感知色差，也不适用于密码学用途；当前 API 不支持 seed，因此不保证结果可复现。以上方法仅属于运行时颜色 API，不扩展 Preview、CLI、Node 或 CSS 入口。
 
