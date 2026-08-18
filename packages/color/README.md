@@ -67,6 +67,72 @@ const mainColors = generateSemanticColors('Main', 'light')
 }
 ```
 
+### 动态颜色色阶 API
+
+以下方法从 `@yakit-libs/color` 导入，用于在运行时解析颜色变量或生成自定义色阶。每组色阶都包含从 `10` 到 `100` 的十个 `--yakit-colors-*` 变量。
+
+**1. 解析颜色变量**
+
+`resolveColorVariable(variable, source)` 会递归解析严格以 `--Colors-Use-` 或 `--yakit-colors-` 开头的变量，返回最终的十六进制颜色。`variable` 可以是变量名，也可以是 `var(...)` 表达式；`source` 可以是变量对象，或提供 `getPropertyValue()` 的对象。
+
+```typescript
+import { resolveColorVariable } from '@yakit-libs/color'
+
+const colors = {
+  '--Colors-Use-Blue-Primary': 'var(--yakit-colors-Blue-60)',
+  '--yakit-colors-Blue-60': '#2F87FF',
+}
+
+const hex = resolveColorVariable('--Colors-Use-Blue-Primary', colors)
+// '#2F87FF'
+```
+
+无法解析的变量、循环引用、非十六进制最终值以及不支持的变量前缀会抛出 `TypeError`。
+
+**2. 根据指定基色生成色阶**
+
+`generateColorScales(items, mode)` 接收名称与基色数组，返回一个扁平的 CSS 变量对象。`mode` 默认为 `light`，也可以传入 `dark`。
+
+```typescript
+import { generateColorScales } from '@yakit-libs/color'
+
+const colors = generateColorScales(
+  [
+    { name: 'blue', hex: '#0000FF' },
+    { name: 'green', hex: '#00FF00' },
+  ],
+  'light',
+)
+
+colors['--yakit-colors-blue-10']
+colors['--yakit-colors-blue-100']
+colors['--yakit-colors-green-60']
+```
+
+名称或十六进制颜色无效、名称重复时会抛出 `TypeError`。
+
+**3. 随机生成色阶**
+
+`generateRandomColorScales(exclusions?, generateColorsNum?, mode?)` 默认生成 5 组色阶，名称依次为 `Random-1` 到 `Random-5`。传入 `generateColorsNum` 可以控制组数；该值必须是非负安全整数，并且不能超过排除指定颜色后剩余的 24-bit 可用颜色数量。
+
+```typescript
+import { generateRandomColorScales } from '@yakit-libs/color'
+
+const colors = generateRandomColorScales(['#0000FF', '#0F0'], 3, 'dark')
+
+colors['--yakit-colors-Random-1-10']
+colors['--yakit-colors-Random-2-60']
+colors['--yakit-colors-Random-3-100']
+```
+
+随机生成仅保证本次调用中的基色唯一，并按规范化后的十六进制值进行精确排除，例如 `#0F0` 与 `#00FF00` 视为同一颜色。它不保证颜色之间具有足够的感知色差，也不适用于密码学用途；当前 API 不支持 seed，因此不保证结果可复现。以上方法仅属于运行时颜色 API，不扩展 Preview、CLI、Node 或 CSS 入口。
+
+仓库维护者可以直接运行源码示例，验证以上三个 API：
+
+```bash
+pnpm --filter @yakit-libs/color example:source-api
+```
+
 ### 使用外部主题色生成静态 CSS（推荐用于生产环境）
 
 消费项目可以在构建时传入 Main 主题色，生成同时包含 light/dark 变量的静态 CSS。颜色计算只在 Node.js 构建阶段执行，浏览器不需要加载颜色生成逻辑。
